@@ -36,7 +36,7 @@ void MessageQueue<T>::send(T &&msg)
  
 TrafficLight::TrafficLight()
 {
-    _currentPhase = TrafficLightPhase::red;
+    _currentPhase.store(TrafficLightPhase::red, std::memory_order_relaxed);
 }
 
 void TrafficLight::waitForGreen()
@@ -51,7 +51,7 @@ void TrafficLight::waitForGreen()
 
 TrafficLightPhase TrafficLight::getCurrentPhase()
 {
-    return _currentPhase;
+    return _currentPhase.load(std::memory_order_relaxed);
 }
 
 void TrafficLight::simulate()
@@ -81,12 +81,14 @@ void TrafficLight::cycleThroughPhases()
         if (elapsed >= cycleDuration) {
             lastUpdate = now;
             cycleDuration = std::chrono::seconds(dist(gen));
-            _currentPhase = (_currentPhase == TrafficLightPhase::red) ? TrafficLightPhase::green : TrafficLightPhase::red;
-            _phaseQueue.send(std::move(_currentPhase));
+            auto nextPhase = (_currentPhase.load(std::memory_order_relaxed) == TrafficLightPhase::red)
+                                 ? TrafficLightPhase::green
+                                 : TrafficLightPhase::red;
+            _currentPhase.store(nextPhase, std::memory_order_relaxed);
+            _phaseQueue.send(std::move(nextPhase));
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
-
 

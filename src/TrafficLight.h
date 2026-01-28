@@ -1,6 +1,7 @@
 #ifndef TRAFFICLIGHT_H
 #define TRAFFICLIGHT_H
 
+#include <atomic>
 #include <mutex>
 #include <deque>
 #include <condition_variable>
@@ -63,7 +64,7 @@ private:
     // and use it within the infinite loop to push each new TrafficLightPhase into it by calling 
     // send in conjunction with move semantics.
 
-    TrafficLightPhase _currentPhase;
+    std::atomic<TrafficLightPhase> _currentPhase;
     std::condition_variable _condition;
     std::mutex _mutex;
     MessageQueue<TrafficLightPhase>  _phaseQueue;
